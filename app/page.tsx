@@ -40,7 +40,7 @@ const steps: Step[] = [
     id: 1,
     title: "Who’s thinking about upgrading their water?",
     subtitle:
-      "Greetings Friend, before we move further in taking steps to improve your water quality, what is your name?",
+      "Greetings, friend. Before we take further steps to improve your water quality, what is your name?",
     fields: [
       {
         name: "name",
@@ -472,7 +472,7 @@ export default function Home() {
                   className="flex min-h-screen w-screen shrink-0 flex-col justify-end px-4 pb-14 pt-24 md:px-12 md:pb-24"
                 >
                   <div className="max-w-3xl">
-                    {/* STEP CONTENT (no hero on first step now) */}
+                    {/* STEP CONTENT */}
                     <div className="space-y-4">
                       <p className="text-xs font-medium tracking-[0.3em] text-foreground/60">
                         {step.id} → {TOTAL_SECTIONS}
@@ -570,20 +570,6 @@ export default function Home() {
                         )}
                       </div>
                     </div>
-
-                    {/* Scroll hint only on first step */}
-                    {index === 0 && (
-                      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 animate-in fade-in duration-1000 delay-500 md:bottom-8">
-                        <div className="flex items-center gap-2">
-                          <p className="font-mono text-[10px] text-foreground/80 md:text-xs">
-                            Scroll to explore
-                          </p>
-                          <div className="flex h-5 w-10 items-center justify-center rounded-full border border-foreground/20 bg-foreground/15 backdrop-blur-md md:h-6 md:w-12">
-                            <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-foreground/80 md:h-2 md:w-2" />
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </section>
               )
