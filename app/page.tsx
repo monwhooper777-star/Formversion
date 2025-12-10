@@ -40,7 +40,7 @@ const steps: Step[] = [
     id: 1,
     title: "Who’s thinking about upgrading their water?",
     subtitle:
-      "I intend on helping those whom know the severity of proper water quality and the necessity of the specific technology that can aid us in improving water quality.",
+      "Greetings Friend, before we move further in taking steps to improve your water quality, what is your name?",
     fields: [
       {
         name: "name",
