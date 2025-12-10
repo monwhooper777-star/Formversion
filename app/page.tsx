@@ -9,7 +9,7 @@ import { CustomCursor } from "@/components/custom-cursor"
 import { GrainOverlay } from "@/components/grain-overlay"
 import { MagneticButton } from "@/components/magnetic-button"
 
-// ---------- FORM CONFIG (Kangen / Enagic specific) ----------
+// ---------- FORM CONFIG (Kangen® / Enagic specific) ----------
 
 type FormData = {
   name: string
@@ -54,7 +54,7 @@ const steps: Step[] = [
     id: 2,
     title: "Where can I send everything?",
     subtitle:
-      "I’ll use this to send you details, demos, and a breakdown of which Kangen options make sense for you. No spam.",
+      "I’ll use this to send you details, demos, and a breakdown of which Kangen® options make sense for you. No spam.",
     fields: [
       {
         name: "email",
@@ -67,7 +67,7 @@ const steps: Step[] = [
   },
   {
     id: 3,
-    title: "Why are you looking into Kangen water?",
+    title: "Why are you looking into Kangen® water?",
     subtitle:
       "Everyone has a different reason—health, recovery, family, performance, business. What made you start looking?",
     fields: [
@@ -99,7 +99,7 @@ const steps: Step[] = [
   },
   {
     id: 5,
-    title: "Where do you want Kangen water in your life?",
+    title: "Where do you want Kangen® water in your life?",
     subtitle:
       "Home, family, office, clinic, gym—the use-case affects which machine is the best fit.",
     fields: [
@@ -132,7 +132,7 @@ const steps: Step[] = [
 const navItems = [
   "You",
   "Contact",
-  "Why Kangen?",
+  "Why Kangen®?",
   "Current Water",
   "Use-case",
   "Budget",
@@ -244,7 +244,7 @@ export default function Home() {
     setIsSubmitting(true)
     try {
       // TODO: hook into /api/lead + Resend / DB
-      console.log("Submitting Kangen interest:", formData)
+      console.log("Submitting Kangen® interest:", formData)
       await new Promise((resolve) => setTimeout(resolve, 800))
       setIsSubmitted(true)
       if (scrollContainerRef.current) {
@@ -455,7 +455,7 @@ export default function Home() {
 
               <p className="max-w-xl text-sm leading-relaxed text-foreground/90 md:text-base">
                 Your answers are in. I’ll review everything personally and send you a tailored
-                breakdown of the Kangen options that fit your situation—plus demos, comparisons,
+                breakdown of the Kangen® options that fit your situation—plus demos, comparisons,
                 and clear next steps.
               </p>
             </div>
