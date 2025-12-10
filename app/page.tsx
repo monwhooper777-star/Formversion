@@ -40,7 +40,7 @@ const steps: Step[] = [
     id: 1,
     title: "Who’s thinking about upgrading their water?",
     subtitle:
-      "We work one-to-one with a small group of people at a time. Start by telling us who you are.",
+      "I work one-to-one with a small group of people at a time. Start by telling me who you are.",
     fields: [
       {
         name: "name",
@@ -52,9 +52,9 @@ const steps: Step[] = [
   },
   {
     id: 2,
-    title: "Where can we send the details?",
+    title: "Where can I send everything?",
     subtitle:
-      "We’ll use this to share Kangen water info, demos, and next steps. No spam, no mass blasts.",
+      "I’ll use this to send you details, demos, and a breakdown of which Kangen options make sense for you. No spam.",
     fields: [
       {
         name: "email",
@@ -67,9 +67,9 @@ const steps: Step[] = [
   },
   {
     id: 3,
-    title: "Why are you interested in Kangen / electrolyzed water?",
+    title: "Why are you looking into Kangen water?",
     subtitle:
-      "Health, performance, family, business, curiosity—there’s no wrong answer. This just helps us understand your intent.",
+      "Everyone has a different reason—health, recovery, family, performance, business. What made you start looking?",
     fields: [
       {
         name: "goal",
@@ -83,9 +83,9 @@ const steps: Step[] = [
   },
   {
     id: 4,
-    title: "What does your water situation look like right now?",
+    title: "What’s your water situation right now?",
     subtitle:
-      "Tap, bottled, filter, RO, another ionizer—give us a quick snapshot so we can compare properly.",
+      "Tap, bottled, filter, RO, another ionizer—this helps me compare things properly for you.",
     fields: [
       {
         name: "currentSituation",
@@ -101,7 +101,7 @@ const steps: Step[] = [
     id: 5,
     title: "Where do you want Kangen water in your life?",
     subtitle:
-      "Home, family, office, clinic, gym—this affects which machine and setup makes sense.",
+      "Home, family, office, clinic, gym—the use-case affects which machine is the best fit.",
     fields: [
       {
         name: "useCase",
@@ -114,9 +114,9 @@ const steps: Step[] = [
   },
   {
     id: 6,
-    title: "What kind of investment are you comfortable exploring?",
+    title: "What kind of investment range are you considering?",
     subtitle:
-      "This isn’t a commitment—just a range so we can point you to the right model and payment options.",
+      "This isn’t a commitment—it just helps me point you toward the right model and payment options.",
     fields: [
       {
         name: "budget",
@@ -449,29 +449,14 @@ export default function Home() {
         {isSubmitted ? (
           <section className="flex min-h-screen w-screen shrink-0 flex-col justify-center px-4 pb-14 pt-24 md:px-12 md:pb-24">
             <div className="max-w-3xl space-y-6">
-              <div className="mb-3 flex flex-col items-start gap-1">
-                <Image
-                  src="/japtype.png"
-                  alt="Electrolyzed Water - Japanese"
-                  width={90}
-                  height={24}
-                  priority
-                  className="object-contain opacity-95 md:w-[110px]"
-                />
-                <div className="inline-block rounded-full border border-foreground/20 bg-foreground/15 px-3 py-1 backdrop-blur-md">
-                  <p className="font-mono text-[10px] text-foreground/90 md:text-xs">
-                    Electrolyzed Water Technology
-                  </p>
-                </div>
-              </div>
-
               <h1 className="font-dxgotha text-4xl font-light leading-tight tracking-tight text-foreground sm:text-5xl md:text-6xl">
-                Stay Dangerous. We’ll take it from here.
+                Stay Dangerous. I’ll take it from here.
               </h1>
 
               <p className="max-w-xl text-sm leading-relaxed text-foreground/90 md:text-base">
-                Your answers are in. We’ll review them and reach out with a tailored breakdown
-                of Kangen water options, demos, and next steps that actually match your situation.
+                Your answers are in. I’ll review everything personally and send you a tailored
+                breakdown of the Kangen options that fit your situation—plus demos, comparisons,
+                and clear next steps.
               </p>
             </div>
           </section>
@@ -487,38 +472,7 @@ export default function Home() {
                   className="flex min-h-screen w-screen shrink-0 flex-col justify-end px-4 pb-14 pt-24 md:px-12 md:pb-24"
                 >
                   <div className="max-w-3xl">
-                    {/* Brand hero only on first step */}
-                    {index === 0 && (
-                      <>
-                        <div className="mb-3 flex flex-col items-start gap-1 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                          <Image
-                            src="/japtype.png"
-                            alt="Electrolyzed Water - Japanese"
-                            width={90}
-                            height={24}
-                            priority
-                            className="object-contain opacity-95 md:w-[110px]"
-                          />
-
-                          <div className="inline-block rounded-full border border-foreground/20 bg-foreground/15 px-3 py-1 backdrop-blur-md">
-                            <p className="font-mono text-[10px] text-foreground/90 md:text-xs">
-                              Electrolyzed Water Technology
-                            </p>
-                          </div>
-                        </div>
-
-                        <h1 className="mb-5 animate-in fade-in slide-in-from-bottom-8 font-dxgotha text-4xl font-light leading-tight tracking-tight text-foreground duration-1000 sm:text-5xl md:mb-6 md:text-7xl md:leading-[1.1] lg:text-8xl">
-                          <span className="text-balance">Stay Dangerous</span>
-                        </h1>
-
-                        <p className="mb-8 max-w-xl animate-in fade-in slide-in-from-bottom-4 text-base leading-relaxed text-foreground/90 duration-1000 delay-200 md:text-xl">
-                          Hydration engineered for resilience, clarity, and dangerous longevity.
-                          Kangen water for people who take their body, mind, and future seriously.
-                        </p>
-                      </>
-                    )}
-
-                    {/* STEP CONTENT */}
+                    {/* STEP CONTENT (no hero on first step now) */}
                     <div className="space-y-4">
                       <p className="text-xs font-medium tracking-[0.3em] text-foreground/60">
                         {step.id} → {TOTAL_SECTIONS}
