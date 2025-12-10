@@ -399,7 +399,7 @@ export default function Home() {
             />
           </div>
 
-          <span className="font-sans text-lg font-semibold tracking-tight text-foreground md:text-xl">
+          <span className="font-dxgotha text-lg font-semibold tracking-tight text-foreground md:text-xl">
             MWSD
           </span>
         </button>
