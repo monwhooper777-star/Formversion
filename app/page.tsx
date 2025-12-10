@@ -129,15 +129,6 @@ const steps: Step[] = [
   },
 ]
 
-const navItems = [
-  "You",
-  "Contact",
-  "Why Kangen®?",
-  "Current Water",
-  "Use-case",
-  "Budget",
-]
-
 const TOTAL_SECTIONS = steps.length
 
 const initialFormData: FormData = {
@@ -404,27 +395,7 @@ export default function Home() {
           </span>
         </button>
 
-        <div className="hidden items-center gap-6 md:flex md:gap-8">
-          {navItems.map((item, index) => (
-            <button
-              key={item}
-              onClick={() => scrollToSection(index)}
-              className={`group relative font-sans text-xs font-medium transition-colors md:text-sm ${
-                currentSection === index
-                  ? "text-foreground"
-                  : "text-foreground/80 hover:text-foreground"
-              }`}
-            >
-              {item}
-              <span
-                className={`absolute -bottom-1 left-0 h-px bg-foreground transition-all duration-300 ${
-                  currentSection === index ? "w-full" : "w-0 group-hover:w-full"
-                }`}
-              />
-            </button>
-          ))}
-        </div>
-
+        {/* Only keep Product Demo button – no nav links */}
         <MagneticButton
           variant="secondary"
           onClick={() => scrollToSection(0)}
