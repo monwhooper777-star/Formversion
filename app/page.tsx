@@ -1,19 +1,155 @@
 "use client"
 
+import type React from "react"
 import Image from "next/image"
-import { useRef, useEffect, useState } from "react"
+import { useRef, useEffect, useState, useCallback } from "react"
 
 import { Shader, ChromaFlow, Swirl } from "shaders/react"
 import { CustomCursor } from "@/components/custom-cursor"
 import { GrainOverlay } from "@/components/grain-overlay"
-import { WorkSection } from "@/components/sections/work-section"
-import { ServicesSection } from "@/components/sections/services-section"
-import { AboutSection } from "@/components/sections/about-section"
-import { ContactSection } from "@/components/sections/contact-section"
-import { DemoSection } from "@/components/sections/demo-section"
 import { MagneticButton } from "@/components/magnetic-button"
 
-const TOTAL_SECTIONS = 6 // 0..5 → Hero, Work, Services, Demo, About, Contact
+// ---------- FORM CONFIG (Kangen / Enagic specific) ----------
+
+type FormData = {
+  name: string
+  email: string
+  goal: string
+  currentSituation: string
+  useCase: string
+  budget: string
+}
+
+type StepField = {
+  name: keyof FormData
+  label: string
+  placeholder?: string
+  type?: "text" | "email" | "textarea"
+  required?: boolean
+}
+
+type Step = {
+  id: number
+  title: string
+  subtitle?: string
+  fields: StepField[]
+}
+
+const steps: Step[] = [
+  {
+    id: 1,
+    title: "Who’s thinking about upgrading their water?",
+    subtitle:
+      "We work one-to-one with a small group of people at a time. Start by telling us who you are.",
+    fields: [
+      {
+        name: "name",
+        label: "Name",
+        placeholder: "John Doe",
+        required: true,
+      },
+    ],
+  },
+  {
+    id: 2,
+    title: "Where can we send the details?",
+    subtitle:
+      "We’ll use this to share Kangen water info, demos, and next steps. No spam, no mass blasts.",
+    fields: [
+      {
+        name: "email",
+        label: "Best email",
+        placeholder: "you@example.com",
+        type: "email",
+        required: true,
+      },
+    ],
+  },
+  {
+    id: 3,
+    title: "Why are you interested in Kangen / electrolyzed water?",
+    subtitle:
+      "Health, performance, family, business, curiosity—there’s no wrong answer. This just helps us understand your intent.",
+    fields: [
+      {
+        name: "goal",
+        label: "Main reason you’re looking into it",
+        placeholder:
+          "e.g. energy & recovery, family health, anti-ageing / skin, replacing bottled water, adding value to a clinic or gym…",
+        type: "textarea",
+        required: true,
+      },
+    ],
+  },
+  {
+    id: 4,
+    title: "What does your water situation look like right now?",
+    subtitle:
+      "Tap, bottled, filter, RO, another ionizer—give us a quick snapshot so we can compare properly.",
+    fields: [
+      {
+        name: "currentSituation",
+        label: "Current setup",
+        placeholder:
+          "e.g. supermarket bottled water, basic under-sink filter, RO system, sharehouse tap, already tried another brand of ionizer…",
+        type: "textarea",
+        required: true,
+      },
+    ],
+  },
+  {
+    id: 5,
+    title: "Where do you want Kangen water in your life?",
+    subtitle:
+      "Home, family, office, clinic, gym—this affects which machine and setup makes sense.",
+    fields: [
+      {
+        name: "useCase",
+        label: "Primary use-case & who it’s for",
+        placeholder:
+          "e.g. home use for 2 adults + 2 kids, clinic clients, gym members, office staff, content/testing only…",
+        required: true,
+      },
+    ],
+  },
+  {
+    id: 6,
+    title: "What kind of investment are you comfortable exploring?",
+    subtitle:
+      "This isn’t a commitment—just a range so we can point you to the right model and payment options.",
+    fields: [
+      {
+        name: "budget",
+        label: "Budget range",
+        placeholder:
+          "e.g. 3–4k, 4–6k, higher if it makes sense, would need a payment plan, not sure yet…",
+        required: true,
+      },
+    ],
+  },
+]
+
+const navItems = [
+  "You",
+  "Contact",
+  "Why Kangen?",
+  "Current Water",
+  "Use-case",
+  "Budget",
+]
+
+const TOTAL_SECTIONS = steps.length
+
+const initialFormData: FormData = {
+  name: "",
+  email: "",
+  goal: "",
+  currentSituation: "",
+  useCase: "",
+  budget: "",
+}
+
+// ---------- PAGE ----------
 
 export default function Home() {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -22,7 +158,11 @@ export default function Home() {
   const touchStartY = useRef(0)
   const touchStartX = useRef(0)
   const shaderContainerRef = useRef<HTMLDivElement>(null)
-  const scrollThrottleRef = useRef<number>()
+
+  const [formData, setFormData] = useState<FormData>(initialFormData)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitted, setIsSubmitted] = useState(false)
+  const [lastScrollTime, setLastScrollTime] = useState(0)
 
   // Wait for shader canvas to be ready
   useEffect(() => {
@@ -40,9 +180,7 @@ export default function Home() {
     if (checkShaderReady()) return
 
     const intervalId = setInterval(() => {
-      if (checkShaderReady()) {
-        clearInterval(intervalId)
-      }
+      if (checkShaderReady()) clearInterval(intervalId)
     }, 100)
 
     const fallbackTimer = setTimeout(() => {
@@ -59,26 +197,69 @@ export default function Home() {
     if (!scrollContainerRef.current) return
 
     const clampedIndex = Math.max(0, Math.min(TOTAL_SECTIONS - 1, index))
-
     const sectionWidth = scrollContainerRef.current.offsetWidth
+
     scrollContainerRef.current.scrollTo({
       left: sectionWidth * clampedIndex,
       behavior: "smooth",
     })
+
     setCurrentSection(clampedIndex)
   }
 
-  // Touch scroll (vertical swipes -> horizontal scroll)
+  const isStepValid = useCallback(
+    (index: number) => {
+      const step = steps[index]
+      return step.fields.every((field) => {
+        if (!field.required) return true
+        const value = formData[field.name]
+        return value && value.toString().trim().length > 0
+      })
+    },
+    [formData]
+  )
+
+  const handleFieldChange = (name: keyof FormData, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+  }
+
+  const goNext = () => {
+    if (!isStepValid(currentSection)) return
+    if (currentSection < TOTAL_SECTIONS - 1) {
+      scrollToSection(currentSection + 1)
+    }
+  }
+
+  const goBack = () => {
+    if (currentSection > 0) {
+      scrollToSection(currentSection - 1)
+    }
+  }
+
+  const handleSubmit = async () => {
+    if (!isStepValid(currentSection)) return
+    setIsSubmitting(true)
+    try {
+      // TODO: hook into /api/lead + Resend / DB
+      console.log("Submitting Kangen interest:", formData)
+      await new Promise((resolve) => setTimeout(resolve, 800))
+      setIsSubmitted(true)
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo({ left: 0, behavior: "smooth" })
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Touch scroll: vertical swipes → step navigation
   useEffect(() => {
     const handleTouchStart = (e: TouchEvent) => {
       touchStartY.current = e.touches[0].clientY
       touchStartX.current = e.touches[0].clientX
-    }
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (Math.abs(e.touches[0].clientY - touchStartY.current) > 10) {
-        e.preventDefault()
-      }
     }
 
     const handleTouchEnd = (e: TouchEvent) => {
@@ -88,10 +269,10 @@ export default function Home() {
       const deltaX = touchStartX.current - touchEndX
 
       if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 50) {
-        if (deltaY > 0 && currentSection < TOTAL_SECTIONS - 1) {
-          scrollToSection(currentSection + 1)
-        } else if (deltaY < 0 && currentSection > 0) {
-          scrollToSection(currentSection - 1)
+        if (deltaY > 0) {
+          goNext()
+        } else {
+          goBack()
         }
       }
     }
@@ -99,36 +280,32 @@ export default function Home() {
     const container = scrollContainerRef.current
     if (container) {
       container.addEventListener("touchstart", handleTouchStart, { passive: true })
-      container.addEventListener("touchmove", handleTouchMove, { passive: false })
       container.addEventListener("touchend", handleTouchEnd, { passive: true })
     }
 
     return () => {
       if (container) {
         container.removeEventListener("touchstart", handleTouchStart)
-        container.removeEventListener("touchmove", handleTouchMove)
         container.removeEventListener("touchend", handleTouchEnd)
       }
     }
-  }, [currentSection])
+  }, [currentSection, goNext, goBack])
 
-  // Mouse wheel scroll (vertical -> horizontal)
+  // Mouse wheel: vertical → step navigation
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
       if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
         e.preventDefault()
 
-        if (!scrollContainerRef.current) return
+        const now = Date.now()
+        if (now - lastScrollTime < 600) return // throttle
 
-        scrollContainerRef.current.scrollBy({
-          left: e.deltaY,
-          behavior: "instant",
-        })
+        setLastScrollTime(now)
 
-        const sectionWidth = scrollContainerRef.current.offsetWidth
-        const newSection = Math.round(scrollContainerRef.current.scrollLeft / sectionWidth)
-        if (newSection !== currentSection) {
-          setCurrentSection(newSection)
+        if (e.deltaY > 0) {
+          goNext()
+        } else if (e.deltaY < 0) {
+          goBack()
         }
       }
     }
@@ -143,51 +320,19 @@ export default function Home() {
         container.removeEventListener("wheel", handleWheel)
       }
     }
-  }, [currentSection])
+  }, [currentSection, goNext, goBack, lastScrollTime])
 
-  // Sync currentSection with scrollLeft
-  useEffect(() => {
-    const handleScroll = () => {
-      if (scrollThrottleRef.current) return
-
-      scrollThrottleRef.current = requestAnimationFrame(() => {
-        if (!scrollContainerRef.current) {
-          scrollThrottleRef.current = undefined
-          return
-        }
-
-        const sectionWidth = scrollContainerRef.current.offsetWidth
-        const scrollLeft = scrollContainerRef.current.scrollLeft
-        const newSection = Math.round(scrollLeft / sectionWidth)
-
-        if (
-          newSection !== currentSection &&
-          newSection >= 0 &&
-          newSection <= TOTAL_SECTIONS - 1
-        ) {
-          setCurrentSection(newSection)
-        }
-
-        scrollThrottleRef.current = undefined
-      })
-    }
-
-    const container = scrollContainerRef.current
-    if (container) {
-      container.addEventListener("scroll", handleScroll, { passive: true })
-    }
-
-    return () => {
-      if (container) {
-        container.removeEventListener("scroll", handleScroll)
-      }
-      if (scrollThrottleRef.current) {
-        cancelAnimationFrame(scrollThrottleRef.current)
+  // Press Enter to continue
+  const handleKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      if (currentSection === TOTAL_SECTIONS - 1) {
+        void handleSubmit()
+      } else {
+        goNext()
       }
     }
-  }, [currentSection])
-
-  const navItems = ["Home", "Features", "Feat. Cont.", "Demo.", "About", "Contact"]
+  }
 
   return (
     <main className="relative h-screen w-full overflow-hidden bg-background">
@@ -203,7 +348,6 @@ export default function Home() {
         style={{ contain: "strict" }}
       >
         <Shader className="h-full w-full">
-          {/* RED / BLACK SWIRL BASE */}
           <Swirl
             colorA="#000000"
             colorB="#8b0000"
@@ -217,8 +361,6 @@ export default function Home() {
             fineX={45}
             fineY={45}
           />
-
-          {/* CHROMA FLOW FOR WHITE FLASHES + RED MOVEMENT */}
           <ChromaFlow
             baseColor="#0a0a0a"
             upColor="#ffffff"
@@ -285,86 +427,215 @@ export default function Home() {
 
         <MagneticButton
           variant="secondary"
-          onClick={() => scrollToSection(3)}
+          onClick={() => scrollToSection(0)}
           className="px-4 py-1 text-xs md:px-6 md:py-2 md:text-sm"
         >
           Product Demo.
         </MagneticButton>
       </nav>
 
-      {/* HORIZONTAL SCROLL CONTAINER */}
+      {/* HORIZONTAL STEP CONTAINER */}
       <div
         ref={scrollContainerRef}
         data-scroll-container
-        className={`relative z-10 flex h-screen overflow-x-auto overflow-y-hidden transition-opacity duration-700 ${
+        className={`relative z-10 flex h-screen overflow-x-hidden overflow-y-hidden transition-opacity duration-700 ${
           isLoaded ? "opacity-100" : "opacity-0"
         }`}
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        onKeyDown={handleKeyDown}
+        tabIndex={0}
       >
-        {/* HERO SECTION */}
-        <section className="flex min-h-screen w-screen shrink-0 flex-col justify-end px-4 pb-14 pt-24 md:px-12 md:pb-24">
-          <div className="max-w-3xl">
-            {/* Japanese type + pill */}
-            <div className="mb-3 flex flex-col items-start gap-1 animate-in fade-in slide-in-from-bottom-4 duration-700">
-              <Image
-                src="/japtype.png"
-                alt="Electrolyzed Water - Japanese"
-                width={90}
-                height={24}
-                priority
-                className="object-contain opacity-95 md:w-[110px]"
-              />
-
-              <div className="inline-block rounded-full border border-foreground/20 bg-foreground/15 px-3 py-1 backdrop-blur-md">
-                <p className="font-mono text-[10px] text-foreground/90 md:text-xs">
-                  Electrolyzed Water Technology
-                </p>
+        {/* Thank-you screen after submission */}
+        {isSubmitted ? (
+          <section className="flex min-h-screen w-screen shrink-0 flex-col justify-center px-4 pb-14 pt-24 md:px-12 md:pb-24">
+            <div className="max-w-3xl space-y-6">
+              <div className="mb-3 flex flex-col items-start gap-1">
+                <Image
+                  src="/japtype.png"
+                  alt="Electrolyzed Water - Japanese"
+                  width={90}
+                  height={24}
+                  priority
+                  className="object-contain opacity-95 md:w-[110px]"
+                />
+                <div className="inline-block rounded-full border border-foreground/20 bg-foreground/15 px-3 py-1 backdrop-blur-md">
+                  <p className="font-mono text-[10px] text-foreground/90 md:text-xs">
+                    Electrolyzed Water Technology
+                  </p>
+                </div>
               </div>
-            </div>
 
-            {/* HERO */}
-            <h1 className="mb-5 animate-in fade-in slide-in-from-bottom-8 font-dxgotha text-4xl font-light leading-tight tracking-tight text-foreground duration-1000 sm:text-5xl md:mb-6 md:text-7xl md:leading-[1.1] lg:text-8xl">
-              <span className="text-balance">Stay Dangerous</span>
-            </h1>
+              <h1 className="font-dxgotha text-4xl font-light leading-tight tracking-tight text-foreground sm:text-5xl md:text-6xl">
+                Stay Dangerous. We’ll take it from here.
+              </h1>
 
-            {/* SUBCOPY */}
-            <p className="mb-6 max-w-xl animate-in fade-in slide-in-from-bottom-4 text-base leading-relaxed text-foreground/90 duration-1000 delay-200 md:mb-8 md:text-xl">
-              <span className="text-pretty">
-                Hydration engineered for resilience, clarity, and dangerous longevity. Water that sharpens the body,
-                fortifies the mind, and amplifies human potential.
-              </span>
-            </p>
-
-            <div className="flex animate-in fade-in slide-in-from-bottom-4 flex-col gap-3 duration-1000 delay-300 sm:flex-row sm:items-center">
-              <MagneticButton
-                size="lg"
-                variant="secondary"
-                className="w-full text-sm sm:w-auto md:text-base"
-                onClick={() => scrollToSection(3)}
-              >
-                View Demo
-              </MagneticButton>
-            </div>
-          </div>
-
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 animate-in fade-in duration-1000 delay-500 md:bottom-8">
-            <div className="flex items-center gap-2">
-              <p className="font-mono text-[10px] text-foreground/80 md:text-xs">
-                Scroll to explore
+              <p className="max-w-xl text-sm leading-relaxed text-foreground/90 md:text-base">
+                Your answers are in. We’ll review them and reach out with a tailored breakdown
+                of Kangen water options, demos, and next steps that actually match your situation.
               </p>
-              <div className="flex h-5 w-10 items-center justify-center rounded-full border border-foreground/20 bg-foreground/15 backdrop-blur-md md:h-6 md:w-12">
-                <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-foreground/80 md:h-2 md:w-2" />
-              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        ) : (
+          <>
+            {steps.map((step, index) => {
+              const isLast = index === TOTAL_SECTIONS - 1
+              const stepValid = isStepValid(index)
 
-        {/* OTHER SECTIONS */}
-        <WorkSection />
-        <ServicesSection />
-        <DemoSection scrollToSection={scrollToSection} />
-        <AboutSection scrollToSection={scrollToSection} />
-        <ContactSection />
+              return (
+                <section
+                  key={step.id}
+                  className="flex min-h-screen w-screen shrink-0 flex-col justify-end px-4 pb-14 pt-24 md:px-12 md:pb-24"
+                >
+                  <div className="max-w-3xl">
+                    {/* Brand hero only on first step */}
+                    {index === 0 && (
+                      <>
+                        <div className="mb-3 flex flex-col items-start gap-1 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                          <Image
+                            src="/japtype.png"
+                            alt="Electrolyzed Water - Japanese"
+                            width={90}
+                            height={24}
+                            priority
+                            className="object-contain opacity-95 md:w-[110px]"
+                          />
+
+                          <div className="inline-block rounded-full border border-foreground/20 bg-foreground/15 px-3 py-1 backdrop-blur-md">
+                            <p className="font-mono text-[10px] text-foreground/90 md:text-xs">
+                              Electrolyzed Water Technology
+                            </p>
+                          </div>
+                        </div>
+
+                        <h1 className="mb-5 animate-in fade-in slide-in-from-bottom-8 font-dxgotha text-4xl font-light leading-tight tracking-tight text-foreground duration-1000 sm:text-5xl md:mb-6 md:text-7xl md:leading-[1.1] lg:text-8xl">
+                          <span className="text-balance">Stay Dangerous</span>
+                        </h1>
+
+                        <p className="mb-8 max-w-xl animate-in fade-in slide-in-from-bottom-4 text-base leading-relaxed text-foreground/90 duration-1000 delay-200 md:text-xl">
+                          Hydration engineered for resilience, clarity, and dangerous longevity.
+                          Kangen water for people who take their body, mind, and future seriously.
+                        </p>
+                      </>
+                    )}
+
+                    {/* STEP CONTENT */}
+                    <div className="space-y-4">
+                      <p className="text-xs font-medium tracking-[0.3em] text-foreground/60">
+                        {step.id} → {TOTAL_SECTIONS}
+                      </p>
+
+                      <h2 className="text-3xl font-semibold leading-tight text-foreground sm:text-4xl md:text-5xl">
+                        {step.title}
+                      </h2>
+
+                      {step.subtitle && (
+                        <p className="max-w-xl text-sm leading-relaxed text-foreground/80 md:text-base">
+                          {step.subtitle}
+                        </p>
+                      )}
+
+                      <div className="mt-6 space-y-6">
+                        {step.fields.map((field) => {
+                          const value = formData[field.name] as string
+                          const isTextArea = field.type === "textarea"
+                          const invalid = field.required && !value.trim()
+
+                          return (
+                            <div key={field.name} className="space-y-2">
+                              <label className="block text-xs font-medium uppercase tracking-[0.2em] text-foreground/60">
+                                {field.label}
+                                {field.required && (
+                                  <span className="ml-1 text-red-400">*</span>
+                                )}
+                              </label>
+
+                              {isTextArea ? (
+                                <textarea
+                                  rows={4}
+                                  className={`w-full rounded-2xl border border-foreground/25 bg-black/40 px-4 py-3 text-sm text-foreground outline-none backdrop-blur-sm transition focus:border-foreground/60 focus:bg-black/60 ${
+                                    invalid ? "border-red-500/70" : ""
+                                  }`}
+                                  value={value}
+                                  placeholder={field.placeholder}
+                                  onChange={(e) =>
+                                    handleFieldChange(field.name, e.target.value)
+                                  }
+                                />
+                              ) : (
+                                <input
+                                  type={field.type ?? "text"}
+                                  className={`h-12 w-full rounded-2xl border border-foreground/25 bg-black/40 px-4 text-sm text-foreground outline-none backdrop-blur-sm transition focus:border-foreground/60 focus:bg-black/60 ${
+                                    invalid ? "border-red-500/70" : ""
+                                  }`}
+                                  value={value}
+                                  placeholder={field.placeholder}
+                                  onChange={(e) =>
+                                    handleFieldChange(field.name, e.target.value)
+                                  }
+                                />
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* CONTROLS */}
+                    <div className="mt-10 flex items-center justify-between">
+                      <button
+                        onClick={goBack}
+                        disabled={index === 0}
+                        className="text-xs font-medium text-foreground/60 disabled:cursor-not-allowed disabled:opacity-30"
+                      >
+                        ← Back
+                      </button>
+
+                      <div className="flex items-center gap-3">
+                        <p className="hidden text-xs text-foreground/60 sm:inline">
+                          Press <span className="font-mono">Enter</span> to continue
+                        </p>
+
+                        {isLast ? (
+                          <MagneticButton
+                            as="button"
+                            onClick={handleSubmit}
+                            disabled={!stepValid || isSubmitting}
+                            className="rounded-full px-6 py-2 text-xs font-medium uppercase tracking-[0.2em] disabled:cursor-not-allowed disabled:opacity-40 md:text-sm"
+                          >
+                            {isSubmitting ? "Sending…" : "Submit"}
+                          </MagneticButton>
+                        ) : (
+                          <MagneticButton
+                            as="button"
+                            onClick={goNext}
+                            disabled={!stepValid}
+                            className="rounded-full px-6 py-2 text-xs font-medium uppercase tracking-[0.2em] disabled:cursor-not-allowed disabled:opacity-40 md:text-sm"
+                          >
+                            Next
+                          </MagneticButton>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Scroll hint only on first step */}
+                    {index === 0 && (
+                      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 animate-in fade-in duration-1000 delay-500 md:bottom-8">
+                        <div className="flex items-center gap-2">
+                          <p className="font-mono text-[10px] text-foreground/80 md:text-xs">
+                            Scroll to explore
+                          </p>
+                          <div className="flex h-5 w-10 items-center justify-center rounded-full border border-foreground/20 bg-foreground/15 backdrop-blur-md md:h-6 md:w-12">
+                            <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-foreground/80 md:h-2 md:w-2" />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              )
+            })}
+          </>
+        )}
       </div>
 
       {/* Hide scrollbars globally */}
